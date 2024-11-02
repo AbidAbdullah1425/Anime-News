@@ -5,7 +5,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Import configuration variables
-from config import TELEGRAM_TOKEN, CHANNEL_ID, RSS_URL, API_HASH, APP_ID
+from config import TELEGRAM_TOKEN, CHANNEL_ID, RSS_URL, API_HASH, APP_ID, ADMINS
 
 # Import your custom Bot class
 from bot import Bot  # Import your custom Bot class
@@ -57,9 +57,10 @@ def get_thumbnail_url(entry):
         return entry.media_thumbnail[0]['url']
     return None
 
-@Client.on_message(filters.command('animenewson'))
+@Bot.on_message(filters.private & filters.user(ADMINS) & filters.command('animenewson'))
 async def start_fetching(client: Client, message):
     global is_fetching, fetch_task
+
     if not is_fetching:
         is_fetching = True
         await message.reply_text("Fetching anime news started!")
@@ -67,9 +68,10 @@ async def start_fetching(client: Client, message):
     else:
         await message.reply_text("Already fetching anime news.")
 
-@Client.on_message(filters.command('animenewsoff'))
+@Bot.on_message(filters.private & filters.user(ADMINS) & filters.command('animenewsoff'))
 async def stop_fetching(client: Client, message):
     global is_fetching, fetch_task
+
     if is_fetching:
         is_fetching = False
         if fetch_task:
@@ -78,3 +80,4 @@ async def stop_fetching(client: Client, message):
         await message.reply_text("Fetching anime news stopped.")
     else:
         await message.reply_text("Not currently fetching anime news.")
+
