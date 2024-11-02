@@ -14,3 +14,6 @@ class Database:
         # Insert a new news entry into the database
         self.db.news.insert_one({"link": link})
 
+# Initialize the database
+database = Database()
+
