@@ -46,8 +46,7 @@ async def fetch_and_send_news():
         # Insert the new news link into the database
         database.insert_news(link)
 
-        # Delay between messages to avoid floo
-ding
+        # Delay between messages to avoid flooding
         await asyncio.sleep(5)
 
 def get_thumbnail_url(entry):
