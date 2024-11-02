@@ -1,36 +1,16 @@
-#(©)CodeXBotz
-
-
-
-
-import pymongo, os
+from pymongo import MongoClient
 from config import DB_URI, DB_NAME
 
+class Database:
+    def __init__(self):
+        self.client = MongoClient(DB_URI)
+        self.db = self.client[DB_NAME]
 
-dbclient = pymongo.MongoClient(DB_URI)
-database = dbclient[DB_NAME]
+    def check_duplicate(self, link):
+        # Check if the link exists in the database
+        return self.db.news.find_one({"link": link}) is not None
 
+    def insert_news(self, link):
+        # Insert a new news entry into the database
+        self.db.news.insert_one({"link": link})
 
-user_data = database['users']
-
-
-
-async def present_user(user_id : int):
-    found = user_data.find_one({'_id': user_id})
-    return bool(found)
-
-async def add_user(user_id: int):
-    user_data.insert_one({'_id': user_id})
-    return
-
-async def full_userbase():
-    user_docs = user_data.find()
-    user_ids = []
-    for doc in user_docs:
-        user_ids.append(doc['_id'])
-        
-    return user_ids
-
-async def del_user(user_id: int):
-    user_data.delete_one({'_id': user_id})
-    return
