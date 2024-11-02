@@ -10,15 +10,18 @@ from config import TELEGRAM_TOKEN, CHANNEL_ID, RSS_URL, API_HASH, APP_ID
 # Import your custom Bot class
 from bot import Bot  # Import your custom Bot class
 
-# Global variable to control fetching state
+# Global variables to control fetching state and task
 is_fetching = False
+fetch_task = None  # Stores the fetch task so it can be canceled
 
 async def fetch_and_send_news(client: Client):  # Pass the client instance
     feed = feedparser.parse(RSS_URL)
 
     for entry in feed.entries:
-        print(entry)
+        if not is_fetching:  # Check if fetching is stopped
+            break
 
+        print(entry)
         title = entry.title
         link = entry.link
 
@@ -31,7 +34,7 @@ async def fetch_and_send_news(client: Client):  # Pass the client instance
         image_url = get_thumbnail_url(entry)
 
         # Prepare the message
-        caption = f"{title}\n\n💫🌵 - {CHANNEL_ID}"
+        caption = f"{title}\n\n💫🌵 - @AnimeNewsQuest"
 
         if image_url:
             print(f"Sending photo: {image_url}")
@@ -56,19 +59,22 @@ def get_thumbnail_url(entry):
 
 @Client.on_message(filters.command('animenewson'))
 async def start_fetching(client: Client, message):
-    global is_fetching
+    global is_fetching, fetch_task
     if not is_fetching:
         is_fetching = True
         await message.reply_text("Fetching anime news started!")
-        asyncio.create_task(fetch_and_send_news(client))  # Pass the client instance
+        fetch_task = asyncio.create_task(fetch_and_send_news(client))  # Store the fetch task
     else:
         await message.reply_text("Already fetching anime news.")
 
 @Client.on_message(filters.command('animenewsoff'))
 async def stop_fetching(client: Client, message):
-    global is_fetching
+    global is_fetching, fetch_task
     if is_fetching:
         is_fetching = False
+        if fetch_task:
+            fetch_task.cancel()  # Cancel the running fetch task
+            fetch_task = None  # Reset the task variable
         await message.reply_text("Fetching anime news stopped.")
     else:
         await message.reply_text("Not currently fetching anime news.")
