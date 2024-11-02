@@ -21,7 +21,7 @@ class Bot(Client):
                 "root": "plugins"
             },
             workers=TG_BOT_WORKERS,
-            bot_token=TG_BOT_TOKEN
+            bot_token=TELEGRAM_TOKEN
         )
         self.LOGGER = LOGGER
 
