@@ -7,8 +7,8 @@
     "news",
     "rss"
   ],
-  "repository": "https://github.com/yourusername/AnimeNewsBot",
-  "logo": "https://yourlogo.url/logo.png",
+  "repository": "https://github.com/AbidAbdullah1425/Anime-News",
+  "logo": "https://envs.sh/_BZ.jpg",
   "env": {
     "TELEGRAM_TOKEN": {
       "description": "Your Telegram Bot token from @BotFather",
