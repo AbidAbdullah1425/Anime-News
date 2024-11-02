@@ -3,7 +3,7 @@ import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from bot import Bot
-from config import FORCE_MSG, START_MSG
+from config import FORCE_MSG, START_MSG, ADMINS
 
 @Bot.on_message(filters.private & filters.user(ADMINS) & filters.command('start'))
 async def start_command(client: Client, message: Message):
