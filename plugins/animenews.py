@@ -1,5 +1,6 @@
 import asyncio
 import feedparser
+from database.database import database  # Ensure you import the database class
 from telegram import Bot
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -13,24 +14,41 @@ bot = Bot(token=TELEGRAM_TOKEN)
 is_fetching = False
 
 async def fetch_and_send_news():
-    global is_fetching
-    while is_fetching:
-        feed = feedparser.parse(RSS_URL)
-        for entry in feed.entries:
-            title = entry.title
-            link = entry.link
-            image_url = get_thumbnail_url(entry)
-            caption = f"{title}\n\n💫🌵 - {CHANNEL_ID}"
+    feed = feedparser.parse(RSS_URL)
 
-            if image_url:
-                try:
-                    await bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=caption)
-                except Exception as e:
-                    print(f"Failed to send photo: {e}")
-            else:
-                await bot.send_message(chat_id=CHANNEL_ID, text=caption)
+    for entry in feed.entries:
+        print(entry)
 
-            await asyncio.sleep(5)  # Delay between messages
+        title = entry.title
+        link = entry.link
+
+        # Check for duplicates using the link
+        if database.check_duplicate(link):
+            print(f"Duplicate news found: {link}. Skipping...")
+            continue  # Skip sending this news
+
+        # Get the thumbnail image URL
+        image_url = get_thumbnail_url(entry)
+
+        # Prepare the message
+        caption = f"{title}\n\n💫🌵 - {CHANNEL_ID}"
+
+        if image_url:
+            print(f"Sending photo: {image_url}")
+            try:
+                await bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=caption)
+            except Exception as e:
+                print(f"Failed to send photo: {e}")
+        else:
+            print("No valid image URL found, sending message only.")
+            await bot.send_message(chat_id=CHANNEL_ID, text=caption)
+
+        # Insert the new news link into the database
+        database.insert_news(link)
+
+        # Delay between messages to avoid floo
+ding
+        await asyncio.sleep(5)
 
 def get_thumbnail_url(entry):
     if hasattr(entry, 'media_thumbnail'):
