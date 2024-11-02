@@ -1,19 +1,19 @@
 import asyncio
 import feedparser
 from database.database import database  # Ensure you import the database class
-from telegram import Bot
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Import configuration variables
-from config import TELEGRAM_TOKEN, CHANNEL_ID, RSS_URL
+from config import TELEGRAM_TOKEN, CHANNEL_ID, RSS_URL, API_HASH, APP_ID
 
-bot = Bot(token=TELEGRAM_TOKEN)
+# Import your custom Bot class
+from bot import Bot  # Import your custom Bot class
 
 # Global variable to control fetching state
 is_fetching = False
 
-async def fetch_and_send_news():
+async def fetch_and_send_news(client: Client):  # Pass the client instance
     feed = feedparser.parse(RSS_URL)
 
     for entry in feed.entries:
@@ -36,12 +36,12 @@ async def fetch_and_send_news():
         if image_url:
             print(f"Sending photo: {image_url}")
             try:
-                await bot.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=caption)
+                await client.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=caption)
             except Exception as e:
                 print(f"Failed to send photo: {e}")
         else:
             print("No valid image URL found, sending message only.")
-            await bot.send_message(chat_id=CHANNEL_ID, text=caption)
+            await client.send_message(chat_id=CHANNEL_ID, text=caption)
 
         # Insert the new news link into the database
         database.insert_news(link)
@@ -60,7 +60,7 @@ async def start_fetching(client: Client, message):
     if not is_fetching:
         is_fetching = True
         await message.reply_text("Fetching anime news started!")
-        asyncio.create_task(fetch_and_send_news())
+        asyncio.create_task(fetch_and_send_news(client))  # Pass the client instance
     else:
         await message.reply_text("Already fetching anime news.")
 
@@ -72,4 +72,3 @@ async def stop_fetching(client: Client, message):
         await message.reply_text("Fetching anime news stopped.")
     else:
         await message.reply_text("Not currently fetching anime news.")
-
