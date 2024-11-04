@@ -15,42 +15,54 @@ is_fetching = False
 fetch_task = None  # Stores the fetch task so it can be canceled
 
 async def fetch_and_send_news(client: Client):  # Pass the client instance
-    feed = feedparser.parse(RSS_URL)
+    global is_fetching
 
-    for entry in feed.entries:
-        if not is_fetching:  # Check if fetching is stopped
-            break
+    while is_fetching:
+        feed = feedparser.parse(RSS_URL)
+        
+        new_entries_found = False  # Track if new entries are found
 
-        print(entry)
-        title = entry.title
-        link = entry.link
+        for entry in feed.entries:
+            if not is_fetching:  # Check if fetching is stopped
+                break
 
-        # Check for duplicates using the link
-        if database.check_duplicate(link):
-            print(f"Duplicate news found: {link}. Skipping...")
-            continue  # Skip sending this news
+            title = entry.title
+            link = entry.link
 
-        # Get the thumbnail image URL
-        image_url = get_thumbnail_url(entry)
+            # Check for duplicates using the link
+            if database.check_duplicate(link):
+                print(f"Duplicate news found: {link}. Skipping...")
+                continue  # Skip sending this news
 
-        # Prepare the message
-        caption = f"{title}\n\n💫🌵 - @AnimeNewsQuest"
+            # Get the thumbnail image URL
+            image_url = get_thumbnail_url(entry)
 
-        if image_url:
-            print(f"Sending photo: {image_url}")
-            try:
-                await client.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=caption)
-            except Exception as e:
-                print(f"Failed to send photo: {e}")
-        else:
-            print("No valid image URL found, sending message only.")
-            await client.send_message(chat_id=CHANNEL_ID, text=caption)
+            # Prepare the message
+            caption = f"{title}\n\n💫🌵 - @AnimeNewsQuest"
 
-        # Insert the new news link into the database
-        database.insert_news(link)
+            if image_url:
+                print(f"Sending photo: {image_url}")
+                try:
+                    await client.send_photo(chat_id=CHANNEL_ID, photo=image_url, caption=caption)
+                except Exception as e:
+                    print(f"Failed to send photo: {e}")
+            else:
+                print("No valid image URL found, sending message only.")
+                await client.send_message(chat_id=CHANNEL_ID, text=caption)
 
-        # Delay between messages to avoid flooding
-        await asyncio.sleep(5)
+            # Insert the new news link into the database
+            database.insert_news(link)
+
+            # Indicate that a new entry was found and sent
+            new_entries_found = True
+
+            # Delay between messages to avoid flooding
+            await asyncio.sleep(5)
+
+        # If no new entries are found, wait before the next check
+        if not new_entries_found:
+            print("No new entries. Waiting to check again...")
+            await asyncio.sleep(60)  # Wait for 60 seconds before checking again
 
 def get_thumbnail_url(entry):
     if hasattr(entry, 'media_thumbnail'):
@@ -80,4 +92,3 @@ async def stop_fetching(client: Client, message):
         await message.reply_text("Fetching anime news stopped.")
     else:
         await message.reply_text("Not currently fetching anime news.")
-
